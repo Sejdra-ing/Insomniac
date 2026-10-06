@@ -163,8 +163,12 @@ class Session(ABC):
 
         code, body, _ = network.get(f"https://insomniac-bot.com/get_latest_supported_ig_version/")
         if code == HTTP_OK and body is not None:
-            json_config = json.loads(body)
-            latest_supported_ig_version = json_config['message']
+            try:
+                json_config = json.loads(body)
+                latest_supported_ig_version = json_config['message']
+            except (ValueError, KeyError, TypeError):
+                # insomniac-bot.com is no longer maintained, its answer can be anything
+                return
         else:
             return
 

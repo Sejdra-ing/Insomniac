@@ -59,7 +59,7 @@ def run_registration_safely(device_wrapper):
         def wrapper(*args, **kwargs):
             try:
                 func(*args, **kwargs)
-            except (DeviceFacade.JsonRpcError, IndexError, HTTPException, timeout) as ex:
+            except (DeviceFacade.JsonRpcError, IndexError, HTTPException, timeout, U2Error) as ex:
                 print(COLOR_FAIL + describe_exception(ex) + COLOR_ENDC)
                 save_crash(device_wrapper.get(), ex)
                 print("No idea what it was. Let's try again.")

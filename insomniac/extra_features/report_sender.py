@@ -64,10 +64,17 @@ class NotificationChatBot:
         except ImportError:
             from telegram import ParseMode
         try:
-            result = self.bot.send_message(chat_id=self.chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
-            # python-telegram-bot >= 20 is async
-            if inspect.isawaitable(result):
-                asyncio.run(result)
+            if inspect.iscoroutinefunction(self.bot.send_message):
+                # python-telegram-bot >= 20 is async: its Bot is bound to one event loop, so use a fresh Bot per send
+                from telegram import Bot
+
+                async def _send():
+                    async with Bot(self.token) as bot:
+                        await bot.send_message(chat_id=self.chat_id, text=text, parse_mode=ParseMode.MARKDOWN)
+
+                asyncio.run(_send())
+            else:
+                self.bot.send_message(chat_id=self.chat_id, text=text, timeout=10, parse_mode=ParseMode.MARKDOWN)
         except Exception as e:
             print_debug(COLOR_FAIL + f"Failed to send message in NotificationChatBot: {e}" + COLOR_ENDC)
 

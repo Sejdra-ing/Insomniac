@@ -161,6 +161,10 @@ class DeviceFacade:
             else:
                 debug_number = "0000"
             output = os.path.join(SCREEN_RECORDS_PATH, f"debug_{debug_number}.mp4")
+            if not hasattr(self.deviceV2, 'path2url'):
+                # uiautomator2 3.x removed the minicap endpoint its screen recorder relies on
+                print(COLOR_FAIL + "Screen recording is not supported with uiautomator2 3.x" + COLOR_ENDC)
+                return
             try:
                 self.deviceV2.screenrecord(output, fps)
             except ModuleNotFoundError:
@@ -172,7 +176,7 @@ class DeviceFacade:
 
     def stop_screen_record(self):
         """Available for uiautomator2 only"""
-        if self.deviceV1 is not None:
+        if self.deviceV1 is not None or not hasattr(self.deviceV2, 'path2url'):
             return
 
         try:
