@@ -76,7 +76,7 @@ def get_package_by_name(device_id, name) -> Optional[str]:
         app_name = execute_command("adb" + ("" if device_id is None else " -s " + device_id) +
                                    f" shell {DEVICE_AAPT_PATH}{AAPT_BINARY_NAME} d badging {path} "
                                    f"| grep \"application: label\" "
-                                   f"| sed -n \"s/.*label\='\([^']*\)'.*/\\1/p\"")
+                                   f"| sed -n \"s/.*label\\='\\([^']*\\)'.*/\\1/p\"")
         if app_name == name:
             return package
     return None

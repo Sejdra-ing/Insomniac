@@ -81,7 +81,7 @@ def _request(url, data, headers, initial_timeout):
         attempt += 1
         timeout = initial_timeout ** attempt
         try:
-            with urllib.request.urlopen(request, timeout=timeout, context=ssl.SSLContext()) as response:
+            with urllib.request.urlopen(request, timeout=timeout, context=ssl.create_default_context()) as response:
                 code = response.code
                 fail_reason = None
                 if code == HTTP_OK:

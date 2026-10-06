@@ -4,6 +4,13 @@ from socket import timeout
 import adbutils
 import urllib3
 
+try:
+    # Base class of every error raised by uiautomator2 >= 3.0 (connection, UiAutomation, RPC...)
+    from uiautomator2.exceptions import BaseException as U2Error
+except ImportError:
+    class U2Error(Exception):
+        pass
+
 from insomniac import __version__
 from insomniac.device_facade import DeviceFacade
 from insomniac.globals import is_insomniac
@@ -24,7 +31,7 @@ def run_safely(device_wrapper):
                 return func(*args, **kwargs)
             except (IndexError, OSError, RuntimeError,
                     HTTPException, urllib3.exceptions.HTTPError,
-                    DeviceFacade.JsonRpcError, adbutils.errors.AdbError) as ex:
+                    DeviceFacade.JsonRpcError, adbutils.errors.AdbError, U2Error) as ex:
                 print(COLOR_FAIL + describe_exception(ex, with_stacktrace=__version__.__debug_mode__ or not is_insomniac()) + COLOR_ENDC)
                 # Check that adb works fine
                 check_adb_connection(device_wrapper.device_id, wait_for_device=True)

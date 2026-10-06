@@ -9,7 +9,6 @@ from insomniac.extra_features.limits import ExtendedLimitsManager
 from insomniac.extra_features.management_actions_runners import ManagementActionRunnersManager, \
     RegisterAccountsActionRunner
 from insomniac.extra_features.report import print_full_management_report
-from insomniac.extra_features.report_sender import send_report
 from insomniac.extra_features.session_state import ManagementSessionState
 from insomniac.extra_features.storage import MANAGEMENT_STORAGE_ARGS, InsomniacManagementStorage
 from insomniac.extra_features.utils import install_aapt_if_needed
@@ -77,8 +76,7 @@ class ExtendedInsomniacSession(InsomniacSession):
             "default": None
         },
         "send_stats": {
-            "help": 'add this flag to send your statistics to the Telegram bot @your_insomniac_bot '
-                    '(anonymous, only action counts)',
+            "help": 'deprecated, does nothing: statistics are no longer sent to insomniac-bot.com',
             "action": 'store_true',
             "default": False
         }
@@ -183,7 +181,6 @@ class ExtendedInsomniacSession(InsomniacSession):
 
     def end_session(self, device_wrapper, with_app_closing=True):
         super().end_session(device_wrapper, with_app_closing)
-        send_report(is_bot_enabled=self.send_stats)
 
         if self.post_session_script is not None:
             try:

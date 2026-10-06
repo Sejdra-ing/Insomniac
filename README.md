@@ -27,6 +27,19 @@ Insomniac is **completely free & opensource** as of **v3.9.0**. "Extra features"
 
 ---
 
+#### This fork (v3.9.1)
+- Works with uiautomator2 3.x and Python 3.9 to 3.13.
+- Sends no statistics to insomniac-bot.com and downloads no code from it.
+- The `insomniac` package on PyPI is the upstream v3.9.0, without these fixes. Install from this repo instead:
+  ```
+  git clone https://github.com/Sejdra-ing/Insomniac.git
+  cd Insomniac
+  python3 -m pip install -r requirements.txt
+  python3 start.py --config-file config-examples/interact/interact-likes-only.json
+  ```
+
+---
+
 <br />
 
 ### Why Automating Instagram Activity (Liking, Following, etc.)?
