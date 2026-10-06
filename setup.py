@@ -2,7 +2,7 @@ import setuptools
 
 from insomniac.__version__ import __version__
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", errors='ignore') as fh:
     long_description = fh.read()
 
 with open("requirements.txt", "r") as file:
@@ -17,12 +17,17 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/alexal1/Insomniac",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=[
+        'registration',
+        'registration.*',
+        'insomniac_webui_server',
+        'insomniac_webui_server.*'
+    ]),
     install_requires=install_requires,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.9',
     include_package_data=True
 )

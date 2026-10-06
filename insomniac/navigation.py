@@ -1,170 +1,122 @@
-from enum import Enum, unique
-
-from insomniac.actions_types import GetProfileAction
 from insomniac.utils import *
+from insomniac.views import TabBarView, ProfileView, TabBarTabs, LanguageNotEnglishException, DialogView, OpenedPostView
 
 SEARCH_CONTENT_DESC_REGEX = '[Ss]earch and [Ee]xplore'
 
 
-def navigate(device, tab):
-    tab_name = tab.name.lower()
-    tab_index = tab.value
-
-    print("Press " + tab_name)
-    if tab == Tabs.SEARCH:
-        _navigate_to_search(device)
-        return
-
-    tab_bar = device.find(resourceId='com.instagram.android:id/tab_bar', className='android.widget.LinearLayout')
-    button = tab_bar.child(index=tab_index)
-
-    # Two clicks to reset tab content
-    button.click()
-    button.click()
+def navigate(device, tab, switch_to_english_on_exception=True):
+    try:
+        TabBarView(device).navigate_to(tab)
+    except LanguageNotEnglishException as ex:
+        if not switch_to_english_on_exception:
+            raise ex
+        save_crash(device, ex)
+        switch_to_english(device)
+        raise LanguageChangedException()
 
 
-def search_for(device, username=None, hashtag=None, on_action=None):
-    navigate(device, Tabs.SEARCH)
-    search_edit_text = device.find(resourceId='com.instagram.android:id/action_bar_search_edit_text',
-                                   className='android.widget.EditText')
-    search_edit_text.click()
+def search_for(device, username=None, hashtag=None, place=None, on_action=None):
+    search_view = TabBarView(device).navigate_to_search()
+    target_view = None
 
     if username is not None:
-        print("Open user @" + username)
-        search_edit_text.set_text(username)
-        username_view = device.find(resourceId='com.instagram.android:id/row_search_user_username',
-                                    className='android.widget.TextView',
-                                    text=username)
-
-        random_sleep()
-        if not username_view.exists():
-            print_timeless(COLOR_FAIL + "Cannot find user @" + username + ", abort." + COLOR_ENDC)
-            return False
-
-        username_view.click()
-
-        if on_action is not None:
-            on_action(GetProfileAction(user=username))
-
-        return True
+        target_view = search_view.navigate_to_username(username, on_action)
 
     if hashtag is not None:
-        print("Open hashtag #" + hashtag)
-        tab_layout = device.find(resourceId='com.instagram.android:id/fixed_tabbar_tabs_container',
-                                 className='android.widget.LinearLayout')
-        if not tab_layout.exists():
-            print(COLOR_FAIL + "Cannot find tabs." + COLOR_ENDC)
-            return False
-        tab_layout.child(index=2).click()
+        target_view = search_view.navigate_to_hashtag(hashtag)
 
-        search_edit_text.set_text(hashtag)
-        hashtag_view = device.find(resourceId='com.instagram.android:id/row_hashtag_textview_tag_name',
-                                   className='android.widget.TextView',
-                                   text=f"#{hashtag}")
+    if place is not None:
+        target_view = search_view.navigate_to_place(place)
 
-        random_sleep()
-        if not hashtag_view.exists():
-            print_timeless(COLOR_FAIL + "Cannot find hashtag #" + hashtag + ", abort." + COLOR_ENDC)
-            return False
-
-        hashtag_view.click()
-        return True
-
-    return False
+    return target_view is not None
 
 
 def switch_to_english(device):
     print(COLOR_OKGREEN + "Switching to English locale" + COLOR_ENDC)
-    navigate(device, Tabs.PROFILE)
-    print("Changing language in settings")
-
-    action_bar = device.find(resourceId='com.instagram.android:id/action_bar',
-                             className='android.widget.LinearLayout')
-    # We wanna pick last ImageView in the action bar
-    options_view = None
-    for options_view in action_bar.child(className='android.widget.ImageView'):
-        pass
-    if options_view is None or not options_view.exists():
-        print(COLOR_FAIL + "No idea how to open menu..." + COLOR_ENDC)
-        return
-    options_view.click()
-
-    settings_button = device.find(resourceId='com.instagram.android:id/menu_settings_row',
-                                  className='android.widget.TextView')
-    settings_button.click()
-
-    for account_item_index in range(6, 9):
-        list_view = device.find(resourceId='android:id/list',
-                                className='android.widget.ListView')
-        account_item = list_view.child(index=account_item_index)
-        account_item.click()
-
-        list_view = device.find(resourceId='android:id/list',
-                                className='android.widget.ListView')
-        if not list_view.exists():
-            print("Opened a wrong tab, going back")
-            device.back()
-            continue
-        language_item = list_view.child(index=4)
-        if not language_item.exists():
-            print("Opened a wrong tab, going back")
-            device.back()
-            continue
-        language_item.click()
-
-        search_edit_text = device.find(resourceId='com.instagram.android:id/search',
-                                       className='android.widget.EditText')
-        if not search_edit_text.exists():
-            print("Opened a wrong tab, going back")
-            device.back()
-            device.back()
-            continue
-        search_edit_text.set_text("english")
-
-        list_view = device.find(resourceId='com.instagram.android:id/language_locale_list',
-                                className='android.widget.ListView')
-        english_item = list_view.child(index=0)
-        english_item.click()
-
-        break
+    navigate(device, TabBarTabs.PROFILE, switch_to_english_on_exception=False)
+    ProfileView(device) \
+        .navigate_to_options() \
+        .navigate_to_settings() \
+        .switch_to_english()
 
 
-def _navigate_to_search(device):
-    # Search tab is a special case, because on some accounts there is "Reels" tab instead. If so, we have to go to the
-    # "Home" tab and press search in the action bar.
+def open_instagram_with_network_check(device) -> bool:
+    """
+    :return: true if IG app was opened, false if it was already opened
+    """
+    print("Open Instagram app with network check")
+    device_id = device.device_id
+    app_id = device.app_id
 
-    tab_bar = device.find(resourceId='com.instagram.android:id/tab_bar', className='android.widget.LinearLayout')
-    search_in_tab_bar = tab_bar.child(descriptionMatches=SEARCH_CONTENT_DESC_REGEX)
-    if search_in_tab_bar.exists():
-        # Two clicks to reset tab content
-        search_in_tab_bar.click()
-        search_in_tab_bar.click()
-        return
+    # Try via starter
+    cmd = ("adb" + ("" if device_id is None else " -s " + device_id) +
+           f" shell am start -a com.alexal1.starter.CHECK_CONNECTION_AND_LAUNCH_APP --es \"package\" \"{app_id}\"")
+    cmd_res = subprocess.run(cmd, stdout=PIPE, stderr=PIPE, shell=True, encoding="utf8")
+    err = cmd_res.stderr.strip()
+    if err:
+        # Fallback to standard way
+        print(COLOR_FAIL + "Didn't work :(" + COLOR_ENDC)
+        return open_instagram(device_id, app_id)
 
-    print("Didn't find search in the tab bar...")
-    navigate(device, Tabs.HOME)
-    print("Press search in the action bar")
-    action_bar = device.find(resourceId='com.instagram.android:id/action_bar', className='android.widget.LinearLayout')
-    search_in_action_bar = action_bar.child(descriptionMatches=SEARCH_CONTENT_DESC_REGEX)
-    if search_in_action_bar.exists():
-        search_in_action_bar.click()
-        return
+    # Wait until Instagram is actually opened
+    max_attempts = 10
+    attempt = 0
+    while True:
+        sleep(5)
+        attempt += 1
+        resumed_activity_output = execute_command("adb" + ("" if device_id is None else " -s " + device_id) +
+                                                  f" shell dumpsys activity | grep 'mResumedActivity'",
+                                                  error_allowed=False)
+        if resumed_activity_output is None:
+            # Fallback to standard way
+            print(COLOR_FAIL + "Didn't work :(" + COLOR_ENDC)
+            return open_instagram(device_id, app_id)
+        if app_id in resumed_activity_output:
+            break
 
-    print(COLOR_FAIL + "Cannot find search tab neither in the tab bar, nor in the action bar. Maybe not English "
-                       "language is set?" + COLOR_ENDC)
-    save_crash(device)
-    switch_to_english(device)
-    raise LanguageChangedException()
+        if attempt < max_attempts:
+            print(COLOR_OKGREEN + "Instagram is not yet opened, waiting..." + COLOR_ENDC)
+            sleep(10)
+        else:
+            return open_instagram_with_network_check(device)
+    return True
+
+
+def close_instagram_and_system_dialogs(device):
+    close_instagram(device.device_id, device.app_id)
+    # If the app crashed there will be a system dialog
+    DialogView(device).close_not_responding_dialog_if_visible()
+
+
+def is_user_exists(device, username):
+    return TabBarView(device).navigate_to_search().find_username(username)
+
+
+def is_post_exists(device, post_link):
+    if not open_instagram_with_url(device.device_id, device.app_id, post_link):
+        return False
+    is_post_opened = OpenedPostView(device).is_visible()
+    device.back()
+    return is_post_opened
 
 
 class LanguageChangedException(Exception):
     pass
 
 
-@unique
-class Tabs(Enum):
-    HOME = 0
-    SEARCH = 1
-    PLUS = 2
-    LIKES = 3
-    PROFILE = 4
+class InstagramOpener:
+
+    INSTANCE = None
+
+    device = None
+    is_with_connection_check = False
+
+    def __init__(self, device, is_with_connection_check):
+        self.device = device
+        self.is_with_connection_check = is_with_connection_check
+
+    def open_instagram(self):
+        if self.is_with_connection_check:
+            open_instagram_with_network_check(self.device)
+        else:
+            open_instagram(self.device.device_id, self.device.app_id)

@@ -1,4 +1,4 @@
-__logo__ = """
+__logo__ = r"""
 ##########################################################
 #                                                        #
 #   _____                                 _              #
@@ -13,9 +13,9 @@ __logo__ = """
 __title__ = 'insomniac'
 __description__ = 'Simple Instagram bot for automated Instagram interaction using Android.'
 __url__ = 'https://github.com/alexal1/Insomniac/'
-__version__ = '3.3.1'
+__version__ = '3.9.1'
 __debug_mode__ = False
 __author__ = 'Insomniac Team'
 __author_email__ = 'info@insomniac-bot.com'
 __license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2020 Insomniac Team'
+__copyright__ = 'Copyright 2024 Insomniac Team'
