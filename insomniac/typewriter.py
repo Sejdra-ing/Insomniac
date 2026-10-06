@@ -87,6 +87,9 @@ class Typewriter:
             if attempts_count == 5:
                 return False
             sleep(2)
+        # Recent Android versions refuse to select an input method that hasn't been enabled first
+        os.popen("adb" + ("" if self.device_id is None else " -s " + self.device_id)
+                 + f" shell ime enable {ADB_KEYBOARD_IME}").close()
         stream = os.popen("adb" + ("" if self.device_id is None else " -s " + self.device_id)
                           + f" shell ime set {ADB_KEYBOARD_IME}")
         output = stream.read()
