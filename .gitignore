@@ -10,3 +10,4 @@ filter.json
 *.log
 screen_records
 insomniac.db
+emulator-artifacts
